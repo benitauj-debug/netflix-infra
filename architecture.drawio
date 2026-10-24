@@ -1,0 +1,180 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="netflix-infra-architecture" name="netflix-infra architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="8" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="netflix-infra: Terraform builds AWS, k3s runs the app, Argo CD deploys it from Git" style="text;html=1;fontSize=17;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="24" y="8" width="1000" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Follow the numbers. Blue = a visitor using the app. Green = a code change being deployed (GitOps). Orange = the engineer managing the system. Hover over any box for details." style="text;html=1;fontSize=12;align=left;verticalAlign=middle;fontColor=#5f5e5a;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="24" y="36" width="1150" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Containers (drawn first so they sit behind) -->
+        <object label="GitHub" tooltip="App code and infrastructure live in separate repos." id="github">
+          <mxCell style="rounded=1;arcSize=3;dashed=1;fillColor=none;strokeColor=#8a8880;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontColor=#5f5e5a;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="16" y="330" width="200" height="330" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="AWS account, us-east-1" tooltip="Everything inside this dashed line is created and managed by Terraform." id="aws">
+          <mxCell style="rounded=1;arcSize=2;dashed=1;fillColor=none;strokeColor=#8a8880;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontColor=#5f5e5a;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="250" y="72" width="560" height="600" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="VPC 10.0.0.0/16, one public subnet" tooltip="The route table sends 0.0.0.0/0 to an internet gateway, which makes the subnet public. Security group: 80 and 443 open to everyone; 22 and 6443 open only to the engineer's IP." id="vpc">
+          <mxCell style="rounded=1;arcSize=3;fillColor=#f2f1ee;strokeColor=#8a8880;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontColor=#5f5e5a;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="270" y="184" width="520" height="340" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;EC2 node running k3s (Kubernetes), Elastic IP&lt;/b&gt;" tooltip="Ubuntu 24.04, t3.medium. k3s installed at first boot by user data. IMDSv2 required, hop limit 1, encrypted disk. Node role: ECR read only and SSM core." id="node">
+          <mxCell style="rounded=1;arcSize=4;fillColor=#dfe9f8;strokeColor=#2b6cd1;strokeWidth=2;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="286" y="216" width="488" height="292" as="geometry"/>
+          </mxCell>
+        </object>
+
+        <!-- Actors -->
+        <object label="&lt;b&gt;Engineer laptop&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;WSL: Terraform, kubectl, argocd&lt;/font&gt;" tooltip="Ubuntu on WSL2. Uses aws login for short lived credentials, never access keys or root." id="laptop">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#d9822b;strokeWidth=1.5;html=1;fontSize=13;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="24" y="100" width="180" height="56" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;Visitors (browser)&lt;/b&gt;" tooltip="Anyone opening http://ELASTIC_IP." id="users">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#2b6cd1;strokeWidth=1.5;html=1;fontSize=13;" vertex="1" parent="1">
+            <mxGeometry x="24" y="240" width="180" height="48" as="geometry"/>
+          </mxCell>
+        </object>
+
+        <!-- GitHub -->
+        <object label="&lt;b&gt;movie-frontend&lt;/b&gt;" tooltip="React app. REACT_APP_API_URL is set to /api at build time." id="fe_repo">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="32" y="370" width="168" height="40" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;movie-backend&lt;/b&gt;" tooltip="Java 17 app built with Maven." id="be_repo">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="32" y="420" width="168" height="40" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;GitHub Actions&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;runs on push to app repos&lt;/font&gt;" tooltip="One IAM role per pipeline, each limited to its own repo and the main branch. Images are tagged with the commit SHA." id="actions">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#2e8b57;strokeWidth=1.5;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="32" y="490" width="168" height="52" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;netflix-infra&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;Terraform + k8s/ manifests&lt;/font&gt;" tooltip="Single source of truth. k8s/kustomization.yaml pins the image tags Argo CD deploys." id="infra_repo">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="32" y="590" width="168" height="52" as="geometry"/>
+          </mxCell>
+        </object>
+
+        <!-- AWS services -->
+        <object label="&lt;b&gt;S3 state bucket&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;versioned, encrypted, locked&lt;/font&gt;" tooltip="Terraform state. Created by the bootstrap config, protected with prevent_destroy." id="s3">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="270" y="104" width="170" height="56" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;IAM OIDC provider&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;+ 2 scoped roles&lt;/font&gt;" tooltip="Trusts token.actions.githubusercontent.com. Each role checks aud = sts.amazonaws.com and sub = one repo on main." id="oidc">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="470" y="104" width="170" height="56" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;ECR&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;frontend-repo, backend-repo&lt;/font&gt;" tooltip="Scan on push, lifecycle policy keeps the last 10 images." id="ecr">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="270" y="560" width="170" height="60" as="geometry"/>
+          </mxCell>
+        </object>
+
+        <!-- Inside the node -->
+        <object label="Traefik ingress, port 80" tooltip="Bundled with k3s. /api goes to the backend, everything else to the frontend." id="traefik">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;" vertex="1" parent="1">
+            <mxGeometry x="302" y="256" width="240" height="36" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;frontend pods&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;2 replicas&lt;/font&gt;" tooltip="Pull images from ECR using the ecr-creds Secret, refreshed every 6 hours." id="fpods">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="302" y="330" width="112" height="56" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;backend pods&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;2 replicas&lt;/font&gt;" tooltip="Mongo connection string comes from the backend-env Secret, created by hand, never stored in Git." id="bpods">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="430" y="330" width="112" height="56" as="geometry"/>
+          </mxCell>
+        </object>
+        <object label="&lt;b&gt;Argo CD&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;auto sync, prune, self heal&lt;/font&gt;" tooltip="Runs inside the cluster and pulls desired state from Git. Never exposed publicly; reached through kubectl port-forward." id="argocd">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#2e8b57;strokeWidth=1.5;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="590" y="256" width="168" height="60" as="geometry"/>
+          </mxCell>
+        </object>
+
+        <!-- External -->
+        <object label="&lt;b&gt;MongoDB Atlas&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#5f5e5a&quot;&gt;allows the node's IP only&lt;/font&gt;" tooltip="Managed database outside AWS (Cluster0, database movies)." id="atlas">
+          <mxCell style="rounded=1;fillColor=#ffffff;strokeColor=#8a8880;html=1;fontSize=12;whiteSpace=wrap;" vertex="1" parent="1">
+            <mxGeometry x="850" y="330" width="150" height="60" as="geometry"/>
+          </mxCell>
+        </object>
+
+        <!-- Blue: visitor flow -->
+        <mxCell id="e1" value="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2b6cd1;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2b6cd1;" edge="1" parent="1" source="users" target="traefik">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2a" value="2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2b6cd1;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2b6cd1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="traefik" target="fpods">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2b" value="2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2b6cd1;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2b6cd1;exitX=0.8;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="traefik" target="bpods">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="3" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2b6cd1;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2b6cd1;" edge="1" parent="1" source="bpods" target="atlas">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Green: GitOps deploy flow -->
+        <mxCell id="e4" value="4" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2e8b57;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2e8b57;exitX=1;exitY=0.3;entryX=0.5;entryY=0;" edge="1" parent="1" source="actions" target="oidc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="230" y="506"/>
+              <mxPoint x="230" y="88"/>
+              <mxPoint x="555" y="88"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="5" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2e8b57;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2e8b57;exitX=1;exitY=0.75;entryX=0;entryY=0.5;" edge="1" parent="1" source="actions" target="ecr">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="6" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2e8b57;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2e8b57;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="actions" target="infra_repo">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" value="7" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2e8b57;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2e8b57;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="argocd" target="infra_repo">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="674" y="650"/>
+              <mxPoint x="230" y="650"/>
+              <mxPoint x="230" y="616"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="8" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#2e8b57;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#2e8b57;exitX=0.1;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="node" target="ecr">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Orange: engineer flow -->
+        <mxCell id="e9" value="9" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#d9822b;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#d9822b;" edge="1" parent="1" source="laptop" target="s3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" value="10" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;flowAnimation=1;strokeColor=#d9822b;strokeWidth=2;fontColor=#ffffff;fontStyle=1;fontSize=11;labelBackgroundColor=#d9822b;exitX=1;exitY=0.85;entryX=0;entryY=0.07;" edge="1" parent="1" source="laptop" target="node">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="147"/>
+              <mxPoint x="240" y="236"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Explanation panel -->
+        <mxCell id="panel" value="&lt;div style=&quot;text-align:left;font-size:12px;line-height:1.45&quot;&gt;&lt;b style=&quot;font-size:14px&quot;&gt;How it works&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;&lt;font color=&quot;#2b6cd1&quot;&gt;A visitor uses the app&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;b&gt;1&lt;/b&gt; Browser hits the Elastic IP on port 80, the only public port.&lt;br&gt;&lt;b&gt;2&lt;/b&gt; Traefik sends /api to the backend, the rest to the frontend.&lt;br&gt;&lt;b&gt;3&lt;/b&gt; Backend reads movie data from MongoDB Atlas.&lt;br&gt;&lt;br&gt;&lt;b&gt;&lt;font color=&quot;#2e8b57&quot;&gt;A code change is deployed (GitOps)&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;b&gt;4&lt;/b&gt; GitHub Actions gets a short lived AWS token through OIDC. No stored keys.&lt;br&gt;&lt;b&gt;5&lt;/b&gt; It builds the image, tags it with the commit SHA, pushes to ECR.&lt;br&gt;&lt;b&gt;6&lt;/b&gt; It commits the new tag to netflix-infra.&lt;br&gt;&lt;b&gt;7&lt;/b&gt; Argo CD pulls the change from Git and applies it.&lt;br&gt;&lt;b&gt;8&lt;/b&gt; The node pulls the new image from ECR.&lt;br&gt;&lt;br&gt;&lt;b&gt;&lt;font color=&quot;#d9822b&quot;&gt;The engineer manages the system&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;b&gt;9&lt;/b&gt; Terraform builds AWS and stores state in S3.&lt;br&gt;&lt;b&gt;10&lt;/b&gt; kubectl and Argo CD access on port 6443, engineer's IP only.&lt;br&gt;&lt;br&gt;&lt;b&gt;Security in one line:&lt;/b&gt; the public only reaches port 80; GitHub never touches the cluster.&lt;/div&gt;" style="rounded=1;arcSize=3;fillColor=#fafaf8;strokeColor=#c9c7c0;html=1;whiteSpace=wrap;verticalAlign=top;align=left;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="850" y="410" width="330" height="300" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
