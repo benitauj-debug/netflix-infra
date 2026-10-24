@@ -89,10 +89,6 @@ Both app pipelines already push images to the ECR repositories created by Terraf
 <img width="4716" height="2740" alt="image" src="https://github.com/user-attachments/assets/b6c4bd00-7ae8-4acd-aa2a-98f0ed2edd93" />
 
 
-
-
- It has numbered, colour coded, animated flows, a "How it works" panel, and hover notes on every box. and choose **File > Open from > Device**, or install the **Draw.io Integration** extension in VS Code and open the file inside the repo. After editing, export a picture with **File > Export as > PNG** to `docs/architecture.png` and commit both files.
-
 The diagram below is the same architecture in Mermaid, which GitHub renders directly on this page.
 
 ### How a request flows
