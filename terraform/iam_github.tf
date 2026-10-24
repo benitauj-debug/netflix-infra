@@ -38,7 +38,10 @@ resource "aws_iam_role" "github_actions" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:benitauj-debug@298327020/movie-backend@1363976261:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:benitauj-debug@298327020/movie-backend@1363976261:ref:refs/heads/main",
+            "repo:benitauj-debug@298327020/movie-frontend@F1374589272:ref:refs/heads/main"
+          ]
         }
       }
       Effect = "Allow"
